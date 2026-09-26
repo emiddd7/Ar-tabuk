@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Tabuk AR</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    #start {
+      position: fixed; inset: 0; z-index: 20; display: flex; align-items: center;
+      justify-content: center; background: #111; color: white; text-align: center;
+      padding: 24px; box-sizing: border-box;
+    }
+    #start button {
+      border: 0; border-radius: 14px; padding: 14px 24px; font-size: 18px;
+      background: white; color: #111;
+    }
+  </style>
+</head>
+<body>
+  <div id="start">
+    <div>
+      <h2>تجربة تبوك بالواقع المعزز</h2>
+      <p>وجهي الكاميرا على صورة تبوك المطبوعة.</p>
+      <button id="startBtn">ابدأ التجربة</button>
+    </div>
+  </div>
+
+  <a-scene
+    id="scene"
+    mindar-image="imageTargetSrc: targets.mind; autoStart: false; uiLoading: no; uiScanning: yes; uiError: yes;"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <video id="arVideo" src="video.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <!-- One target + one video -->
+    <a-entity id="target" mindar-image-target="targetIndex: 0">
+      <a-video
+        id="videoPlane"
+        src="#arVideo"
+        position="0 0 0.02"
+        width="1"
+        height="0.5625"
+        rotation="0 0 0">
+      </a-video>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    const scene = document.querySelector('#scene');
+    const target = document.querySelector('#target');
+    const video = document.querySelector('#arVideo');
+    const start = document.querySelector('#start');
+    const btn = document.querySelector('#startBtn');
+
+    btn.addEventListener('click', async () => {
+      start.style.display = 'none';
+      const mindar = scene.systems['mindar-image-system'];
+      if (mindar) await mindar.start();
+    });
+
+    target.addEventListener('targetFound', () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    });
+
+    target.addEventListener('targetLost', () => {
+      video.pause();
+    });
+  </script>
+</body>
+</html>
