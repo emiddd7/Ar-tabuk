@@ -1,10 +1,16 @@
-<!doctype html>
-
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
+
+<meta
+name=“viewport”
+content=“width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no”
+
   <title>تجربة تبوك بالواقع المعزز</title>
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- MindAR -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   <style>
     html,
@@ -15,14 +21,6 @@
       height: 100%;
       overflow: hidden;
       background: #000;
-      font-family: Arial, sans-serif;
-    }
-    a-scene {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
     }
     #start {
       position: fixed;
@@ -39,41 +37,30 @@
     }
     #startBox {
       width: 100%;
-      max-width: 360px;
+      max-width: 350px;
     }
-    #start h2 {
-      margin-bottom: 15px;
-    }
-    #start p {
-      line-height: 1.8;
-      font-size: 15px;
-    }
-    #startBtn {
-      margin-top: 15px;
-      border: 0;
+    #start button {
+      border: none;
       border-radius: 14px;
-      padding: 15px 28px;
+      padding: 15px 30px;
       font-size: 18px;
       font-weight: bold;
       background: white;
       color: #111;
-    }
-    #startBtn:disabled {
-      opacity: 0.6;
+      margin-top: 10px;
     }
     #status {
       margin-top: 15px;
       font-size: 14px;
       line-height: 1.7;
-      color: #ddd;
     }
     #soundBtn {
       position: fixed;
+      z-index: 10000;
       left: 15px;
       bottom: 20px;
-      z-index: 10000;
       display: none;
-      border: 0;
+      border: none;
       border-radius: 14px;
       padding: 12px 18px;
       font-size: 15px;
@@ -81,13 +68,27 @@
       background: white;
       color: #111;
     }
+    /*
+      مهم:
+      نخلي الـ scene يغطي الشاشة
+    */
+    a-scene {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
   <!-- شاشة البداية -->
   <div id="start">
 <div id="startBox">
-  <h2>تجربة تبوك بالواقع المعزز</h2>
+  <h2>
+    تجربة تبوك بالواقع المعزز
+  </h2>
   <p>
     اضغطي «ابدأ التجربة» ثم اسمحي للمتصفح باستخدام الكاميرا.
   </p>
@@ -101,13 +102,14 @@
   <button id="soundBtn">
     🔊 تشغيل الصوت
   </button>
-  <!-- AR -->
+  <!-- ========================= -->
+  <!--        MINDAR AR           -->
+  <!-- ========================= -->
 
 <a-scene
 
 mindar-image="
   imageTargetSrc: ./targets.mind;
-  autoStart: false;
   uiLoading: no;
   uiScanning: no;
   uiError: no;
@@ -115,11 +117,11 @@ mindar-image="
 color-space="sRGB"
 renderer="
   colorManagement: true;
-  antialias: true;
+  physicallyCorrectLights: true;
 "
 vr-mode-ui="enabled: false"
 device-orientation-permission-ui="enabled: false"
-embedded
+<!-- الفيديو -->
 <a-assets>
   <video
     id="arVideo"
@@ -128,29 +130,32 @@ embedded
     playsinline
     webkit-playsinline
     muted
-    crossorigin="anonymous">
-  </video>
+    crossorigin="anonymous"
+  ></video>
 </a-assets>
+<!-- الكاميرا -->
 <a-camera
   position="0 0 0"
-  look-controls="enabled: false">
-</a-camera>
+  look-controls="enabled: false"
+></a-camera>
 <!-- التارقت -->
 <a-entity
   id="target"
-  mindar-image-target="targetIndex: 0">
+  mindar-image-target="targetIndex: 0"
+>
   <a-video
     id="videoPlane"
     src="#arVideo"
-    position="0 0 0.02"
+    position="0 0 0.01"
     width="1"
-    height="0.5625">
-  </a-video>
+    height="0.5625"
+  ></a-video>
 </a-entity>
   </a-scene>
   <script>
-    const scene = document.querySelector("a-scene");
-    const startScreen =
+    const scene =
+      document.querySelector("a-scene");
+    const start =
       document.getElementById("start");
     const startBtn =
       document.getElementById("startBtn");
@@ -162,84 +167,58 @@ embedded
       document.getElementById("target");
     const soundBtn =
       document.getElementById("soundBtn");
-    let started = false;
     /*
-     * زر بدء التجربة
+     * زر البداية
      */
-    startBtn.addEventListener("click", async function () {
-      if (started) return;
-      startBtn.disabled = true;
-      status.textContent =
-        "جاري تشغيل الكاميرا...";
-      try {
-        /*
-         * تجهيز الفيديو
-         */
-        video.muted = true;
-        video.setAttribute("muted", "");
-        video.setAttribute("playsinline", "");
-        video.setAttribute(
-          "webkit-playsinline",
-          ""
-        );
-        /*
-         * انتظار تحميل A-Frame
-         */
-        if (!scene.hasLoaded) {
-          await new Promise(function (resolve) {
-            scene.addEventListener(
-              "loaded",
-              resolve,
-              { once: true }
+    startBtn.addEventListener(
+      "click",
+      async function () {
+        startBtn.disabled = true;
+        status.textContent =
+          "جاري تشغيل الكاميرا...";
+        try {
+          /*
+           * نبدأ MindAR بالطريقة الافتراضية
+           */
+          const mindar =
+            scene.systems["mindar-image-system"];
+          if (!mindar) {
+            throw new Error(
+              "MindAR لم يتم تحميله"
             );
-          });
-        }
-        /*
-         * الحصول على MindAR
-         */
-        const mindar =
-          scene.systems["mindar-image-system"];
-        if (!mindar) {
-          throw new Error(
-            "MindAR system not found"
+          }
+          /*
+           * MindAR يبدأ الكاميرا
+           */
+          await mindar.start();
+          /*
+           * نخفي شاشة البداية
+           */
+          start.style.display = "none";
+          console.log(
+            "CAMERA STARTED"
           );
         }
-        /*
-         * تشغيل الكاميرا
-         */
-        await mindar.start();
-        started = true;
-        /*
-         * إخفاء شاشة البداية
-         */
-        startScreen.style.display = "none";
-        console.log(
-          "MindAR camera started"
-        );
-      } catch (error) {
-        console.error(
-          "Camera error:",
-          error
-        );
-        status.textContent =
-          "لم يتم تشغيل الكاميرا. تأكدي من السماح للمتصفح باستخدام الكاميرا.";
-        startBtn.disabled = false;
+        catch (error) {
+          console.error(
+            error
+          );
+          status.textContent =
+            "تعذر تشغيل الكاميرا. تأكدي من السماح للمتصفح باستخدام الكاميرا.";
+          startBtn.disabled = false;
+        }
       }
-    });
+    );
     /*
-     * عند العثور على التارقت
+     * عند العثور على الصورة
      */
     target.addEventListener(
       "targetFound",
       async function () {
         console.log(
-          "Target found"
+          "TARGET FOUND"
         );
         video.currentTime = 0;
-        /*
-         * يبدأ الفيديو صامتًا
-         * حتى تسمح أجهزة iPhone بالتشغيل
-         */
         video.muted = true;
         soundBtn.style.display =
           "block";
@@ -247,51 +226,46 @@ embedded
           "🔊 تشغيل الصوت";
         try {
           await video.play();
-        } catch (error) {
+        }
+        catch (error) {
           console.log(
-            "Video play error:",
             error
           );
         }
       }
     );
     /*
-     * عند اختفاء التارقت
+     * عند فقدان الصورة
      */
     target.addEventListener(
       "targetLost",
       function () {
-        console.log(
-          "Target lost"
-        );
         video.pause();
         soundBtn.style.display =
           "none";
       }
     );
     /*
-     * زر تشغيل / كتم الصوت
+     * الصوت
      */
     soundBtn.addEventListener(
       "click",
       async function () {
         if (video.muted) {
+          video.muted = false;
+          video.volume = 1;
           try {
-            video.muted = false;
-            video.volume = 1;
             await video.play();
             soundBtn.textContent =
               "🔇 كتم الصوت";
-          } catch (error) {
+          }
+          catch (error) {
             console.log(
-              "Audio error:",
               error
             );
-            video.muted = true;
-            soundBtn.textContent =
-              "🔊 تشغيل الصوت";
           }
-        } else {
+        }
+        else {
           video.muted = true;
           soundBtn.textContent =
             "🔊 تشغيل الصوت";
