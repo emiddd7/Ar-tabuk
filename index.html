@@ -1,100 +1,264 @@
-<!DOCTYPE html>
+<!doctype html>
+
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>تشخيص الكاميرا</title>
+
+<meta
+name=“viewport”
+content=“width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover”
+
+  <title>تجربة تبوك بالواقع المعزز</title>
+  <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   <style>
+    html,
     body {
       margin: 0;
-      padding: 30px 20px;
-      font-family: Arial;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    .container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    a-scene {
+      width: 100%;
+      height: 100%;
+    }
+    #start {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: #111;
       color: white;
       text-align: center;
+      padding: 25px;
+      box-sizing: border-box;
     }
-    button {
-      padding: 15px 25px;
+    #box {
+      max-width: 360px;
+    }
+    #start button {
       border: 0;
-      border-radius: 12px;
+      border-radius: 14px;
+      padding: 15px 28px;
       font-size: 18px;
-      margin-top: 20px;
+      font-weight: bold;
+      background: white;
+      color: #111;
     }
-    #result {
-      margin-top: 25px;
-      padding: 15px;
-      background: #222;
-      border-radius: 12px;
-      line-height: 1.8;
-      word-break: break-word;
+    #status {
+      margin-top: 15px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    #soundBtn {
+      position: fixed;
+      left: 15px;
+      bottom: 20px;
+      z-index: 99999;
+      display: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: bold;
+      background: white;
+      color: #111;
     }
   </style>
 </head>
 <body>
-  <h2>تشخيص الكاميرا</h2>
-  <p>
-    اضغطي الزر لمعرفة سبب المشكلة.
-  </p>
-  <button onclick="testCamera()">
-    اختبار الكاميرا
-  </button>
-  <div id="result">
-    لم يتم الاختبار بعد
+<div id="start">
+  <div id="box">
+<h2>تجربة تبوك بالواقع المعزز</h2>
+<p>
+  اضغطي «ابدأ التجربة» ثم اسمحي للمتصفح باستخدام الكاميرا.
+</p>
+<button id="startBtn">
+  ابدأ التجربة
+</button>
+<div id="status"></div>
   </div>
-  <script>
-    async function testCamera() {
-      const result =
-        document.getElementById("result");
-      result.innerHTML =
-        "جاري الفحص...";
+</div>
+<button id="soundBtn">
+  🔊 تشغيل الصوت
+</button>
+<div class="container">
+
+<a-scene
+
+mindar-image="
+  imageTargetSrc: ./targets.mind;
+  autoStart: false;
+  uiLoading: no;
+  uiScanning: no;
+  uiError: no;
+"
+embedded
+color-space="sRGB"
+renderer="
+  colorManagement: true;
+  physicallyCorrectLights: false;
+"
+vr-mode-ui="enabled: false"
+device-orientation-permission-ui="enabled: false"
+<a-assets>
+  <video
+    id="arVideo"
+    src="./video.mp4"
+    preload="auto"
+    playsinline
+    webkit-playsinline
+    muted
+    crossorigin="anonymous"
+  ></video>
+</a-assets>
+<a-camera
+  position="0 0 0"
+  look-controls="enabled: false"
+></a-camera>
+<a-entity
+  id="target"
+  mindar-image-target="targetIndex: 0"
+>
+  <a-video
+    id="videoPlane"
+    src="#arVideo"
+    position="0 0 0.01"
+    width="1"
+    height="0.5625"
+  ></a-video>
+</a-entity>
+  </a-scene>
+</div>
+<script>
+  const scene =
+    document.querySelector("a-scene");
+  const start =
+    document.getElementById("start");
+  const startBtn =
+    document.getElementById("startBtn");
+  const status =
+    document.getElementById("status");
+  const video =
+    document.getElementById("arVideo");
+  const target =
+    document.getElementById("target");
+  const soundBtn =
+    document.getElementById("soundBtn");
+  /*
+   * تشغيل التجربة
+   */
+  startBtn.addEventListener("click", async function () {
+    startBtn.disabled = true;
+    status.textContent =
+      "جاري تشغيل الكاميرا...";
+    try {
+      const arSystem =
+        scene.systems["mindar-image-system"];
+      if (!arSystem) {
+        throw new Error(
+          "MindAR system not found"
+        );
+      }
+      /*
+       * تشغيل MindAR
+       */
+      await arSystem.start();
+      /*
+       * إخفاء شاشة البداية
+       */
+      start.style.display = "none";
+      console.log(
+        "MindAR started"
+      );
+    }
+    catch (error) {
+      console.error(
+        "MindAR error:",
+        error
+      );
+      status.textContent =
+        "تعذر تشغيل تجربة الواقع المعزز.";
+      startBtn.disabled = false;
+    }
+  });
+  /*
+   * التارقت ظهر
+   */
+  target.addEventListener(
+    "targetFound",
+    async function () {
+      console.log(
+        "TARGET FOUND"
+      );
+      video.currentTime = 0;
+      video.muted = true;
+      soundBtn.style.display =
+        "block";
+      soundBtn.textContent =
+        "🔊 تشغيل الصوت";
       try {
-        result.innerHTML +=
-          "<br>HTTPS: " +
-          location.protocol;
-        result.innerHTML +=
-          "<br>mediaDevices: " +
-          (navigator.mediaDevices ? "موجود" : "غير موجود");
-        if (!navigator.mediaDevices) {
-          throw new Error(
-            "navigator.mediaDevices غير موجود"
-          );
-        }
-        result.innerHTML +=
-          "<br>getUserMedia: " +
-          (
-            navigator.mediaDevices.getUserMedia
-              ? "موجود"
-              : "غير موجود"
-          );
-        if (!navigator.mediaDevices.getUserMedia) {
-          throw new Error(
-            "getUserMedia غير موجود"
-          );
-        }
-        const stream =
-          await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-          });
-        result.innerHTML +=
-          "<br><br>✅ الكاميرا اشتغلت!";
-        stream
-          .getTracks()
-          .forEach(track => track.stop());
-      } catch (error) {
-        result.innerHTML +=
-          "<br><br>❌ ERROR";
-        result.innerHTML +=
-          "<br>الاسم: " +
-          error.name;
-        result.innerHTML +=
-          "<br>الرسالة: " +
-          error.message;
-        result.innerHTML +=
-          "<br>النوع: " +
-          error.toString();
-        console.error(error);
+        await video.play();
+      }
+      catch (error) {
+        console.log(
+          "Video error:",
+          error
+        );
       }
     }
-  </script>
+  );
+  /*
+   * التارقت اختفى
+   */
+  target.addEventListener(
+    "targetLost",
+    function () {
+      video.pause();
+      soundBtn.style.display =
+        "none";
+    }
+  );
+  /*
+   * زر الصوت
+   */
+  soundBtn.addEventListener(
+    "click",
+    async function () {
+      if (video.muted) {
+        video.muted = false;
+        video.volume = 1;
+        try {
+          await video.play();
+          soundBtn.textContent =
+            "🔇 كتم الصوت";
+        }
+        catch (error) {
+          console.log(
+            "Audio error:",
+            error
+          );
+        }
+      }
+      else {
+        video.muted = true;
+        soundBtn.textContent =
+          "🔊 تشغيل الصوت";
+      }
+    }
+  );
+</script>
 </body>
 </html>
