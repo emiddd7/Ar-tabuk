@@ -2,110 +2,99 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>اختبار كاميرا تبوك</title>
+  <title>تشخيص الكاميرا</title>
   <style>
-    html,
     body {
       margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-    }
-    #camera {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      background: #000;
-    }
-    #start {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 30px 20px;
+      font-family: Arial;
       background: #111;
       color: white;
       text-align: center;
-      padding: 25px;
-    }
-    #box {
-      max-width: 350px;
     }
     button {
-      border: 0;
-      border-radius: 14px;
       padding: 15px 25px;
+      border: 0;
+      border-radius: 12px;
       font-size: 18px;
-      font-weight: bold;
-      margin-top: 15px;
+      margin-top: 20px;
     }
-    #status {
-      margin-top: 15px;
-      line-height: 1.7;
-      font-size: 14px;
+    #result {
+      margin-top: 25px;
+      padding: 15px;
+      background: #222;
+      border-radius: 12px;
+      line-height: 1.8;
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
-  <div id="start">
-<div id="box">
-  <h2>اختبار الكاميرا</h2>
+  <h2>تشخيص الكاميرا</h2>
   <p>
-    اضغطي الزر واسمحي للمتصفح باستخدام الكاميرا.
+    اضغطي الزر لمعرفة سبب المشكلة.
   </p>
-  <button id="btn">
-    تشغيل الكاميرا
+  <button onclick="testCamera()">
+    اختبار الكاميرا
   </button>
-  <div id="status"></div>
-</div>
+  <div id="result">
+    لم يتم الاختبار بعد
   </div>
   <script>
-    const camera =
-      document.getElementById("camera");
-    const start =
-      document.getElementById("start");
-    const btn =
-      document.getElementById("btn");
-    const status =
-      document.getElementById("status");
-    btn.addEventListener(
-      "click",
-      async () => {
-        try {
-          status.textContent =
-            "جاري تشغيل الكاميرا...";
-          const stream =
-            await navigator.mediaDevices.getUserMedia({
-              video: {
-                facingMode: {
-                  ideal: "environment"
-                }
-              },
-              audio: false
-            });
-          camera.srcObject =
-            stream;
-          start.style.display =
-            "none";
-          console.log(
-            "CAMERA OK"
+    async function testCamera() {
+      const result =
+        document.getElementById("result");
+      result.innerHTML =
+        "جاري الفحص...";
+      try {
+        result.innerHTML +=
+          "<br>HTTPS: " +
+          location.protocol;
+        result.innerHTML +=
+          "<br>mediaDevices: " +
+          (navigator.mediaDevices ? "موجود" : "غير موجود");
+        if (!navigator.mediaDevices) {
+          throw new Error(
+            "navigator.mediaDevices غير موجود"
           );
         }
-        catch (error) {
-          console.error(
-            error
+        result.innerHTML +=
+          "<br>getUserMedia: " +
+          (
+            navigator.mediaDevices.getUserMedia
+              ? "موجود"
+              : "غير موجود"
           );
-          status.textContent =
-            "فشل تشغيل الكاميرا: " +
-            error.name;
+        if (!navigator.mediaDevices.getUserMedia) {
+          throw new Error(
+            "getUserMedia غير موجود"
+          );
         }
+        const stream =
+          await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        result.innerHTML +=
+          "<br><br>✅ الكاميرا اشتغلت!";
+        stream
+          .getTracks()
+          .forEach(track => track.stop());
+      } catch (error) {
+        result.innerHTML +=
+          "<br><br>❌ ERROR";
+        result.innerHTML +=
+          "<br>الاسم: " +
+          error.name;
+        result.innerHTML +=
+          "<br>الرسالة: " +
+          error.message;
+        result.innerHTML +=
+          "<br>النوع: " +
+          error.toString();
+        console.error(error);
       }
-    );
+    }
   </script>
 </body>
 </html>
